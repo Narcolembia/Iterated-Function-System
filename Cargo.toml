@@ -1,0 +1,17 @@
+[package]
+name = "fractal_flame_generator"
+version = "0.1.0"
+edition = "2021"
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[dependencies]
+anyhow = "1.0.86"
+dyn-clone = "1.0.17"
+image = "0.25.2"
+nalgebra = "0.33.0"
+rand = "0.8.5"
