@@ -13,33 +13,33 @@ pub fn gen_functions<T:Clone+ Copy +'static>(func: impl Fn(Vec2,T) -> Vec2 + Clo
 ).collect()	
 }
 
-pub fn move_twords_point(input:Vec2, params:(Vec2,f32)) -> Vec2{
+pub fn dilate_around_point(input:Vec2, params:(Vec2,f32)) -> Vec2{
 	let target = params.0;
 	let ratio = params.1;
 
 	return input * ratio + (1.0-ratio)*target
 }
 
-pub fn sinxy_mult(input:Vec2,params:f32)->Vec2{
+pub fn sinxy(input:Vec2,params:f32)->Vec2{
 	let freq = params;
 	return Vec2::new(1.0,1.0)*(input[0]*input[1]*freq).sin()
 }
 
-pub fn gen_sinxy_mult_functions(freqs:Vec<f32>) ->Vec<Box<dyn IfsFunction>> {
-	return gen_functions(sinxy_mult,freqs);
+pub fn gen_sinxy_functions(freqs:Vec<f32>) ->Vec<Box<dyn IfsFunction>> {
+	return gen_functions(sinxy,freqs);
 }
 
-pub fn gen_chaos_game_functions( points: &Vec<Vec2>, ratio: f32) -> Vec<Box<dyn IfsFunction>> {
+pub fn gen_dilations( points: &Vec<Vec2>, ratio: f32) -> Vec<Box<dyn IfsFunction>> {
 	let points = points.clone();
 	let params = points.into_iter().map(|x| (x,ratio)).collect();
-    return gen_functions(move_twords_point, params)
+    return gen_functions(dilate_around_point, params)
 }
 
-pub fn gen_points_on_unit_circle(num_points:usize) -> Vec<Vec2>{
+pub fn gen_points_on_circle(num_points:usize, radius:f32) -> Vec<Vec2>{
 	return (0..num_points)
         .map(|x| {
             let theta = ((x as f32) / (num_points as f32)) * 2.0 * PI;
-            return Vec2::new(theta.cos(), theta.sin())
+            return radius * Vec2::new(theta.cos(), theta.sin())
         }).collect()
 }
 
