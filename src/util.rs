@@ -2,6 +2,7 @@ use std::{collections::HashMap, f32::consts::PI};
 use image::{RgbImage, Rgb};
 use nalgebra::{partial_le, partial_max};
 use crate::ifs::*;
+use num::complex;
 
 
 pub fn gen_functions<T:Clone+ Copy +'static>(func: impl Fn(Vec2,T) -> Vec2 + Clone + 'static ,params:Vec<T>) -> Vec<Box<dyn IfsFunction>> {
@@ -65,7 +66,7 @@ pub fn iterate_function(mut func:impl FnMut(Vec2) -> (Vec2,f32),num_iters:u32) -
 }
 
 
-pub fn points_to_image(points:Vec<(Vec2,f32)>, palette: impl Fn(f32)->Vec3,resolution:u32, gamma:f32)->RgbImage{
+pub fn points_to_image(points:Vec<(Vec2,f32)>, palette: impl Fn(f32)->Vec3,resolution:u32, gamma:f32, scale_factor:f32)->RgbImage{
 	let max = points
 		.iter()
 		.map(|&(pt, _)| pt.magnitude())
@@ -75,7 +76,7 @@ pub fn points_to_image(points:Vec<(Vec2,f32)>, palette: impl Fn(f32)->Vec3,resol
 
     let pixels: Vec<_> = points
 		.into_iter()
-		.map(|pt| ( (((pt.0/max) + Vec2::new(1.0,1.0))*(resolution - 1) as f32/2.0), pt.1))
+		.map(|pt| ( (((pt.0*scale_factor/max) + Vec2::new(1.0,1.0))*(resolution - 1) as f32/2.0), pt.1))
 		.map(|(pos, color)| {
 			let pos = (pos.x as u32, pos.y as u32);
 			(pos, palette(color))
@@ -100,10 +101,13 @@ pub fn points_to_image(points:Vec<(Vec2,f32)>, palette: impl Fn(f32)->Vec3,resol
 		.unwrap();
 
     let mut img = RgbImage::new(resolution, resolution);
+
 	img.pixels_mut().for_each(|p| *p = Rgb([0, 0, 0]));
     for ((x, y), (count, color)) in pointCounts {
+		if x < resolution && y < resolution{
 		let rgbcolor = color * 255.0 * (count as f32 / maxCount as f32).powf(1.0/gamma);
         img.put_pixel(x, y, Rgb([rgbcolor.x as u8,rgbcolor.y as u8,rgbcolor.z as u8]));
+		}
     }
 	return img;
 }
