@@ -6,9 +6,11 @@ use nalgebra::{Dyn, SVector};
 use rand::{prelude::Distribution, Rng};
 use core::num;
 use std::{f32::consts::PI, ops, process::Output};
+use ::num::Complex;
 
-pub type Vec2 = SVector<f32, 2>;
+
 pub type Vec3 = SVector<f32, 3>;
+
 
 #[test]
 pub fn ree() {
@@ -18,11 +20,11 @@ pub fn ree() {
 }
 
 
-pub trait IfsFunction: (Fn(Vec2) -> Vec2) + DynClone { 
+pub trait IfsFunction: (Fn(Complex<f32>) -> Complex<f32>) + DynClone { 
     
 }
 
-impl<Func: Clone + Fn(Vec2) -> Vec2 + ?Sized> IfsFunction for Func {
+impl<Func: Clone + Fn(Complex<f32>) -> Complex<f32> + ?Sized> IfsFunction for Func {
 
 }
 clone_trait_object!(IfsFunction);
@@ -38,7 +40,7 @@ macro_rules! impl_ifsfunc_op {
             fn $op_func(self, rhs: Self) -> Box<dyn IfsFunction> {
                 
                 return Box::new(
-                    move |x| -> Vec2{
+                    move |x| -> Complex<f32>{
                         return self(x).$func_name(&rhs(x));
                     }
                 )
@@ -49,9 +51,9 @@ macro_rules! impl_ifsfunc_op {
 }
 
 impl_ifsfunc_op!(ops::Add,add,add);
-impl_ifsfunc_op!(ops::Mul,mul,component_mul);
+impl_ifsfunc_op!(ops::Mul,mul,mul);
 impl_ifsfunc_op!(ops::Sub,sub,sub);
-impl_ifsfunc_op!(ops::Div,div,component_div);
+impl_ifsfunc_op!(ops::Div,div,div);
 
 fn compose(lhs: Box<dyn IfsFunction>,rhs: Box<dyn IfsFunction>) ->Box<dyn IfsFunction>{
     return Box::new(move|x| lhs(rhs(x)));
@@ -84,7 +86,7 @@ impl Ifs {
         Self { functions, weights, len }
     }
 
-    pub fn build_function(&self, mut rng: impl Rng) -> impl FnMut(Vec2) -> (Vec2,f32) {
+    pub fn build_function(&self, mut rng: impl Rng) -> impl FnMut(Complex<f32>) -> (Complex<f32>,f32) {
         let functions: Vec<_> = self
             .functions.clone();
         let dist = rand::distributions::WeightedIndex::new(self.weights.clone()).unwrap();
@@ -109,14 +111,14 @@ impl Ifs {
 }
 pub fn scalar_function_to_ifs(func: impl Fn(f32)->f32 + Clone + 'static)->Ifs{
     let func = func.clone();
-    let func = move|v:Vec2| Vec2::new(func(v[0]),func(v[1]));    
+    let func = move|v:Complex<f32>| Complex::<f32>::new(func(v.re),func(v.im));    
     let func:Box<dyn IfsFunction> = Box::new(func);
     let func = [func].to_vec();
     return Ifs::new(func,None);
 }
-pub fn vector_function_to_ifs(func: impl Fn(Vec2)->Vec2 + Clone + 'static)->Ifs{
+pub fn vector_function_to_ifs(func: impl Fn(Complex<f32>)->Complex<f32> + Clone + 'static)->Ifs{
     let func = func.clone();
-    let func = move|v:Vec2| func(v);    
+    let func = move|v:Complex<f32>| func(v);    
     let func:Box<dyn IfsFunction> = Box::new(func);
     let func = [func].to_vec();
     return Ifs::new(func,None);
@@ -183,13 +185,13 @@ impl_ifs_op!(ops::Mul<Ifs>,Ifs,mul,mul);
 impl_ifs_op!(ops::Div<Ifs>,Ifs,div,div);
 
 macro_rules! impl_ifs_scalar_op {
-    ($op_name:ty, $op_func:ident, $op:tt) => {
+    ($op_name:ty, $rhs_type:ty, $op_func:ident, $op:tt) => {
         impl $op_name for &Ifs{
             type Output = Ifs;
     
-            fn $op_func(self, rhs: f32) -> Ifs {
+            fn $op_func(self, rhs: $rhs_type) -> Ifs {
                 let self_copy = self.clone();
-                let rhs:Box<dyn IfsFunction> = Box::new(move|x:Vec2| x $op rhs);
+                let rhs:Box<dyn IfsFunction> = Box::new(move|x:Complex<f32>| Complex::<f32>::from(rhs));
                 let rhs = [rhs].to_vec();
                 let rhs = Ifs::new(rhs,None);
                 return self_copy $op rhs
@@ -199,9 +201,9 @@ macro_rules! impl_ifs_scalar_op {
         impl $op_name for Ifs{
             type Output = Ifs;
     
-            fn $op_func(self, rhs: f32) -> Ifs {
+            fn $op_func(self, rhs: $rhs_type) -> Ifs {
                 
-                let rhs:Box<dyn IfsFunction> = Box::new(move|x:Vec2| x $op rhs);
+                let rhs:Box<dyn IfsFunction> = Box::new(move|x:Complex<f32>| Complex::<f32>::from(rhs));
                 let rhs = [rhs].to_vec();
                 let rhs = Ifs::new(rhs,None);
                 return self $op rhs
@@ -211,8 +213,16 @@ macro_rules! impl_ifs_scalar_op {
     };
 }
 
-impl_ifs_scalar_op!(ops::Mul<f32>, mul,*);
-impl_ifs_scalar_op!(ops::Div<f32>, div,/);
+impl_ifs_scalar_op!(ops::Mul<f32>, f32, mul,*);
+impl_ifs_scalar_op!(ops::Div<f32>, f32, div,/);
+impl_ifs_scalar_op!(ops::Mul<Complex<f32>>, Complex<f32>, mul,*);
+impl_ifs_scalar_op!(ops::Div<Complex<f32>>, Complex<f32>, div,/);
+impl_ifs_scalar_op!(ops::Add<f32>, f32, add,+);
+impl_ifs_scalar_op!(ops::Sub<f32>, f32, sub,-);
+impl_ifs_scalar_op!(ops::Add<Complex<f32>>, Complex<f32>, add,+);
+impl_ifs_scalar_op!(ops::Sub<Complex<f32>>, Complex<f32>, sub,-);
+
+
 impl Compose<&Ifs,Ifs> for &Ifs{
     fn compose(self, other:&Ifs) ->Ifs{
         let (self_clone,other_clone) = match_sizes_and_clone(self, other);
