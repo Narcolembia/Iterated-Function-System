@@ -1,0 +1,11 @@
+D:\Documents\rust_projects\Iterated_function_systems\Git_repo\fractal_flame_generator\target\debug\deps\libv_frame-9f30ca38e7fb330a.rmeta: C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\lib.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\frame.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\math.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\pixel.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\plane.rs
+
+D:\Documents\rust_projects\Iterated_function_systems\Git_repo\fractal_flame_generator\target\debug\deps\libv_frame-9f30ca38e7fb330a.rlib: C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\lib.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\frame.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\math.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\pixel.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\plane.rs
+
+D:\Documents\rust_projects\Iterated_function_systems\Git_repo\fractal_flame_generator\target\debug\deps\v_frame-9f30ca38e7fb330a.d: C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\lib.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\frame.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\math.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\pixel.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\plane.rs
+
+C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\lib.rs:
+C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\frame.rs:
+C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\math.rs:
+C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\pixel.rs:
+C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\v_frame-0.3.8\src\plane.rs:

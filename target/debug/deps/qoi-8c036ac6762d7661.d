@@ -1,0 +1,13 @@
+D:\Documents\rust_projects\Iterated_function_systems\Git_repo\fractal_flame_generator\target\debug\deps\libqoi-8c036ac6762d7661.rmeta: C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src/lib.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\decode.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\encode.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\error.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\header.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\pixel.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\types.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\utils.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\consts.rs
+
+D:\Documents\rust_projects\Iterated_function_systems\Git_repo\fractal_flame_generator\target\debug\deps\qoi-8c036ac6762d7661.d: C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src/lib.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\decode.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\encode.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\error.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\header.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\pixel.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\types.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\utils.rs C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\consts.rs
+
+C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src/lib.rs:
+C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\decode.rs:
+C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\encode.rs:
+C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\error.rs:
+C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\header.rs:
+C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\pixel.rs:
+C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\types.rs:
+C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\utils.rs:
+C:\Users\maste\.cargo\registry\src\index.crates.io-6f17d22bba15001f\qoi-0.4.1\src\consts.rs:

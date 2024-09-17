@@ -89,7 +89,7 @@ pub fn points_to_image(points:Vec<(Vec2,f32)>, palette: impl Fn(f32)->Vec3,resol
 			.and_modify(|(count, avgColor)| {
 				*count += 1;
 				*avgColor = (*avgColor*0.9 + color*0.1);
-                
+            
 			})
 			.or_insert((1, color));
 	}
