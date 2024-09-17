@@ -24,11 +24,12 @@ fn main() -> AResult<()> {
         
 
 
-        let p5_r1 = Ifs::new(
+        let contractions = Ifs::new(
             gen_dilations(
                 &gen_points_on_circle(5,1.0), 0.5),None);
        
-        let ifs_final = p5_r1.compose(&sin_xy.compose(&v *&v*2.0)) + &p5_r1;
+        let ifs_final = contractions.compose(&sin_xy.compose(&v*2.0)) + &contractions;
+
         let mut func = ifs_final.build_function(rng);
         //dbg!(util::iterate_function(func, 10u32.pow(1)));
         let palette = util::generate_color_pallete(Vec3::new(1.0,1.0,1.0), Vec3::new(1.0,1.0,1.0), Vec3::new(0.2,0.2,0.3), Vec3::new(0.0,0.33,0.67));
