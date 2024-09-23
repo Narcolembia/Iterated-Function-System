@@ -1,4 +1,4 @@
-use std::{collections::HashMap, f32::consts::PI};
+use std::{collections::HashMap, f32::consts::PI, mem::offset_of};
 use image::{RgbImage, Rgb};
 use nalgebra::{partial_le, partial_max};
 use crate::ifs::*;
@@ -56,7 +56,7 @@ pub fn gen_points_on_spiral(num_points:usize,increment:f32) -> Vec<Complex<f32>>
 
 pub fn iterate_function(mut func:impl FnMut(Complex<f32>) -> (Complex<f32>,f32),num_iters:u32) -> Vec<(Complex<f32>,f32)>{
     let mut ret_list:Vec<(Complex<f32>,f32)> = Vec::new();
-    let mut current_value = (Complex::<f32>::new(0.0,0.0),0.0);
+    let mut current_value = (Complex::<f32>::new(1.0,1.0),0.0);
     for _ in (0..num_iters){
         current_value = func(current_value.0);
         ret_list.push((current_value));
@@ -66,7 +66,8 @@ pub fn iterate_function(mut func:impl FnMut(Complex<f32>) -> (Complex<f32>,f32),
 }
 
 
-pub fn points_to_image(points:Vec<(Complex<f32>,f32)>, palette: impl Fn(f32)->Vec3,resolution:u32, gamma:f32)->RgbImage{
+pub fn points_to_image(points:Vec<(Complex<f32>,f32)>, palette: impl Fn(f32)->Vec3,resolution:u32,scale_factor:f32, offset:Complex<f32>, gamma:f32)->RgbImage{
+	
 	let max = points
 		.iter()
 		.map(|&(pt, _)| pt.norm())
@@ -76,7 +77,7 @@ pub fn points_to_image(points:Vec<(Complex<f32>,f32)>, palette: impl Fn(f32)->Ve
 
     let pixels: Vec<_> = points
 		.into_iter()
-		.map(|pt| ( (((pt.0/max) + Complex::<f32>::new(1.0,1.0))*(resolution - 1) as f32/2.0), pt.1))
+		.map(|pt| ( (((pt.0*scale_factor/max) + Complex::<f32>::new(0.0,0.0) + offset)*(resolution - 1) as f32/2.0), pt.1))
 		.map(|(pos, color)| {
 			let pos = (pos.re as u32, pos.im as u32);
 			(pos, palette(color))
@@ -104,7 +105,9 @@ pub fn points_to_image(points:Vec<(Complex<f32>,f32)>, palette: impl Fn(f32)->Ve
 	img.pixels_mut().for_each(|p| *p = Rgb([0, 0, 0]));
     for ((x, y), (count, color)) in pointCounts {
 		let rgbcolor = color * 255.0 * (count as f32 / maxCount as f32).powf(1.0/gamma);
-        img.put_pixel(x, y, Rgb([rgbcolor.x as u8,rgbcolor.y as u8,rgbcolor.z as u8]));
+		if x<resolution && y < resolution{
+        	img.put_pixel(x, y, Rgb([rgbcolor.x as u8,rgbcolor.y as u8,rgbcolor.z as u8]));
+		}
     }
 	return img;
 }
