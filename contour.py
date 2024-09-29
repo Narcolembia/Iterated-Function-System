@@ -35,6 +35,6 @@ for i in range(0, 255, args.step):
     contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     # Draw contour lines
-    cv2.drawContours(contour_image, contours, -1, (250, 200,200), 2)
+    cv2.drawContours(contour_image, contours, -1, (50, 50,125), 2)
 
 cv2.imwrite(f"{image_name}-pp.jpg", contour_image)

@@ -64,7 +64,6 @@ fn compose(lhs: Box<dyn IfsFunction>,rhs: Box<dyn IfsFunction>) ->Box<dyn IfsFun
 #[derive(Clone)]
 pub struct Ifs {
     functions: Vec<Box<dyn IfsFunction>>,
-    weights: Vec<f32>,
     len: usize,
 }
 
@@ -74,22 +73,24 @@ pub trait Compose<T,O>{
 }
 
 impl Ifs {
-    pub fn new(functions: Vec<Box<dyn IfsFunction>>, weights:Option<Vec<f32>>) -> Self {
+    pub fn new(functions: Vec<Box<dyn IfsFunction>>) -> Self {
+
+        let functions = functions.clone();
+        let len = functions.len();
+        Self { functions, len }
+    }
+
+    pub fn build_function(&self,weights:Option<Vec<f32>>, mut rng: impl Rng) -> impl FnMut(Complex<f32>) -> (Complex<f32>,f32) {
+        let functions: Vec<_> = self
+            .functions.clone();
         let weights = match weights{
             None => (0..functions.len()).map(|x|1.0).collect(),
 
-            Some(x) =>x.clone(),
+            Some(x) =>x,
 
         };
-        let functions = functions.clone();
-        let len = functions.len();
-        Self { functions, weights, len }
-    }
 
-    pub fn build_function(&self, mut rng: impl Rng) -> impl FnMut(Complex<f32>) -> (Complex<f32>,f32) {
-        let functions: Vec<_> = self
-            .functions.clone();
-        let dist = rand::distributions::WeightedIndex::new(self.weights.clone()).unwrap();
+        let dist = rand::distributions::WeightedIndex::new(weights).unwrap();
 
         return move |x| {
             let index = dist.sample(&mut rng);
@@ -99,12 +100,11 @@ impl Ifs {
 
 
     pub fn extend(&self, other:&Ifs) -> Ifs{
-        let mut new_weights = self.weights.clone();
-        new_weights.extend(other.weights.clone());
+       
         let mut new_funcs: Vec<Box<dyn IfsFunction>> = self
             .functions.clone();
         new_funcs.extend(other.functions.clone());
-        return Ifs::new(new_funcs, Some(new_weights));
+        return Ifs::new(new_funcs);
     }
 
 
@@ -114,14 +114,14 @@ pub fn scalar_function_to_ifs(func: impl Fn(f32)->f32 + Clone + 'static)->Ifs{
     let func = move|v:Complex<f32>| Complex::<f32>::new(func(v.re),func(v.im));    
     let func:Box<dyn IfsFunction> = Box::new(func);
     let func = [func].to_vec();
-    return Ifs::new(func,None);
+    return Ifs::new(func);
 }
 pub fn vector_function_to_ifs(func: impl Fn(Complex<f32>)->Complex<f32> + Clone + 'static)->Ifs{
     let func = func.clone();
     let func = move|v:Complex<f32>| func(v);    
     let func:Box<dyn IfsFunction> = Box::new(func);
     let func = [func].to_vec();
-    return Ifs::new(func,None);
+    return Ifs::new(func);
 }
 
 
@@ -138,10 +138,10 @@ fn match_sizes_and_clone(left:&Ifs,  right:&Ifs) -> (Ifs,Ifs){
     let remainder = diff % short.len;
     for _ in 0..quotient{
         short.functions.extend_from_within((0..short.len));
-        short.weights.extend_from_within((0..short.len));
+ 
     }
     short.functions.extend_from_within((0..remainder));
-    short.weights.extend_from_within((0..remainder));
+  
 
     return (left_clone,right_clone)
 }
@@ -158,8 +158,7 @@ macro_rules! impl_ifs_op {
         fn $op_func(self, rhs: $rhs_type) -> Ifs {
             let (lhs,rhs) = match_sizes_and_clone(&self, &rhs);
             let new_funcs= lhs.functions.into_iter().zip(rhs.functions).map(move|(l,r)| l.$func_name(r)).collect();
-            let new_weights = lhs.weights.into_iter().zip(rhs.weights).map(move|(l,r)| l).collect();
-            return Ifs::new(new_funcs ,Some(new_weights));
+            return Ifs::new(new_funcs);
         }
     }
     impl $op_name for Ifs{
@@ -167,8 +166,7 @@ macro_rules! impl_ifs_op {
         fn $op_func(self, rhs: $rhs_type) -> Ifs {
             let (lhs,rhs) = match_sizes_and_clone(&self, &rhs);
             let new_funcs= lhs.functions.into_iter().zip(rhs.functions).map(move|(l,r)| l.$func_name(r)).collect();
-            let new_weights = lhs.weights.into_iter().zip(rhs.weights).map(move|(l,r)| l).collect();
-            return Ifs::new(new_funcs ,Some(new_weights));
+            return Ifs::new(new_funcs);
         }
     }
 
@@ -193,7 +191,7 @@ macro_rules! impl_ifs_scalar_op {
                 let self_copy = self.clone();
                 let rhs:Box<dyn IfsFunction> = Box::new(move|x:Complex<f32>| Complex::<f32>::from(rhs));
                 let rhs = [rhs].to_vec();
-                let rhs = Ifs::new(rhs,None);
+                let rhs = Ifs::new(rhs);
                 return self_copy $op rhs
             }
             
@@ -205,7 +203,7 @@ macro_rules! impl_ifs_scalar_op {
                 
                 let rhs:Box<dyn IfsFunction> = Box::new(move|x:Complex<f32>| Complex::<f32>::from(rhs));
                 let rhs = [rhs].to_vec();
-                let rhs = Ifs::new(rhs,None);
+                let rhs = Ifs::new(rhs);
                 return self $op rhs
             }
             
@@ -227,8 +225,8 @@ impl Compose<&Ifs,Ifs> for &Ifs{
     fn compose(self, other:&Ifs) ->Ifs{
         let (self_clone,other_clone) = match_sizes_and_clone(self, other);
         let new_funcs= self_clone.functions.into_iter().zip(other_clone.functions).map(move|(l,r)| compose(l,r)).collect();
-        let new_weights = self_clone.weights.into_iter().zip(other_clone.weights).map(move|(l,r)| l).collect();
-        return Ifs::new(new_funcs,Some(new_weights))
+       
+        return Ifs::new(new_funcs)
     }
 }
 
@@ -236,8 +234,7 @@ impl Compose<Ifs,Ifs> for &Ifs{
     fn compose(self, other:Ifs) ->Ifs{
         let (self_clone,other_clone) = match_sizes_and_clone(&self, &other);
         let new_funcs= self_clone.functions.into_iter().zip(other_clone.functions).map(move|(l,r)| compose(l,r)).collect();
-        let new_weights = self_clone.weights.into_iter().zip(other_clone.weights).map(move|(l,r)| l).collect();
-        return Ifs::new(new_funcs,Some(new_weights))
+        return Ifs::new(new_funcs)
     }
 }
 

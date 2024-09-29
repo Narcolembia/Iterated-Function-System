@@ -1,4 +1,4 @@
-use std::{collections::HashMap, f32::consts::PI, mem::offset_of};
+use std::{collections::HashMap, f32::consts::PI, mem::offset_of, thread::current};
 use image::{RgbImage, Rgb};
 use nalgebra::{partial_le, partial_max};
 use crate::ifs::*;
@@ -36,10 +36,10 @@ pub fn gen_dilations( points: &Vec<Complex<f32>>, ratio: f32) -> Vec<Box<dyn Ifs
     return gen_functions(dilate_around_point, params)
 }
 
-pub fn gen_points_on_circle(num_points:usize, radius:f32) -> Vec<Complex<f32>>{
+pub fn gen_points_on_circle(num_points:usize, radius:f32,offset:f32) -> Vec<Complex<f32>>{
 	return (0..num_points)
         .map(|x| {
-            let theta = ((x as f32) / (num_points as f32)) * 2.0 * PI;
+            let theta = (((x as f32) / (num_points as f32)) * 2.0 * PI) + offset;
             return radius * Complex::<f32>::new(theta.cos(), theta.sin())
         }).collect()
 }
@@ -59,6 +59,10 @@ pub fn iterate_function(mut func:impl FnMut(Complex<f32>) -> (Complex<f32>,f32),
     let mut current_value = (Complex::<f32>::new(1.0,1.0),0.0);
     for _ in (0..num_iters){
         current_value = func(current_value.0);
+		if current_value.0.norm().is_nan(){
+			current_value = (Complex::<f32>::new(1.0,1.0),0.0);
+			
+		}
         ret_list.push((current_value));
     }
 
@@ -68,16 +72,10 @@ pub fn iterate_function(mut func:impl FnMut(Complex<f32>) -> (Complex<f32>,f32),
 
 pub fn points_to_image(points:Vec<(Complex<f32>,f32)>, palette: impl Fn(f32)->Vec3,resolution:u32,scale_factor:f32, offset:Complex<f32>, gamma:f32)->RgbImage{
 	
-	let max = points
-		.iter()
-		.map(|&(pt, _)| pt.norm())
-		.reduce(|l, r| if l > r { l } else { r })
-		.unwrap();
-
 
     let pixels: Vec<_> = points
 		.into_iter()
-		.map(|pt| ( (((pt.0*scale_factor/max) + Complex::<f32>::new(0.0,0.0) + offset)*(resolution - 1) as f32/2.0), pt.1))
+		.map(|pt| ( (((pt.0*scale_factor) + Complex::<f32>::new(1.0,1.0) + offset)*(resolution - 1) as f32/2.0), pt.1))
 		.map(|(pos, color)| {
 			let pos = (pos.re as u32, pos.im as u32);
 			(pos, palette(color))

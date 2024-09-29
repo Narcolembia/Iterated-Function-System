@@ -4,7 +4,7 @@
 
 mod util;
 mod ifs;
-use std::{collections::HashMap, f32::consts::PI};
+use std::{collections::HashMap, f32::consts::PI, vec};
 use ifs::{scalar_function_to_ifs, vector_function_to_ifs, Compose, Ifs, Vec3};
 use anyhow::Result as AResult;
 use image::{RgbaImage, Rgba};
@@ -27,6 +27,7 @@ fn main() -> AResult<()> {
         let sin_xy = comp_sin.compose(&mult_components);
         let cos_xy = comp_cos.compose(&mult_components);
         let sin = vector_function_to_ifs(|x| x.sin());
+        let asin = vector_function_to_ifs(|x| x.asin());
         let cos = vector_function_to_ifs(|x| x.cos());
         let ln = vector_function_to_ifs(|x| x.ln());
         let tan =  vector_function_to_ifs(|x| x.tan());
@@ -35,22 +36,22 @@ fn main() -> AResult<()> {
 
         let contractions_1 = Ifs::new(
             gen_dilations(
-                &gen_points_on_circle(5,1.0), 0.5),None);
-        let contractions_2 = Ifs::new(
-            gen_dilations(
-                &gen_points_on_circle(10,2.0), 0.2),None);
+                &gen_points_on_circle(20,1.0,0.0), 0.25));
+       
+        let weights_1: Vec<f32> = (0..20).map(|x| if x % 3 == 0 {5.0} else {1.0}).collect();
+        let weights = Some(weights_1);
+        //let weights = None;
+        let ifs_final:Ifs = &contractions_1*&contractions_1;
 
 
-        
-        let ifs_final:Ifs = tan.compose(&contractions_1);
-        let mut func = ifs_final.build_function(rng);
+        let mut func = ifs_final.build_function(weights,rng);
         //dbg!(util::iterate_function(func, 10u32.pow(1)));
-        let palette = util::generate_color_pallete(Vec3::new(0.7,0.7,0.7), Vec3::new(0.9,0.9,0.9), Vec3::new(0.0,0.0,0.0), Vec3::new(0.0,0.0,0.0));
-        let img = util::points_to_image(util::iterate_function(func, 10u32.pow(7)), palette,2000,1.0,Complex::<f32>::new(0.0,0.0),5.0,);
+        let palette = util::generate_color_pallete(Vec3::new(0.7,0.9,0.9), Vec3::new(0.9,0.9,0.9), Vec3::new(0.0,0.27,0.1), Vec3::new(0.1,0.4,0.5));
+        let img = util::points_to_image(util::iterate_function(func, 10u32.pow(7)), palette,2000,0.6,Complex::<f32>::new(0.0,0.0),6.0,);
 
     
         img.save(format!("out_{}.png",j))?;
-    ///}
+    //}
 
     Ok(())
 }
