@@ -1,8 +1,9 @@
-use std::{collections::HashMap, f32::consts::PI, mem::offset_of, thread::current};
-use image::{RgbImage, Rgb};
+use std::{collections::HashMap, f32::consts::PI, mem::offset_of, thread::current,thread,sync::mpsc};
+use image::{Frame, Rgb, RgbImage};
 use nalgebra::{partial_le, partial_max};
 use crate::ifs::*;
 use num::Complex;
+
 
 
 pub fn gen_functions<T:Clone+ Copy +'static>(func: impl Fn(Complex<f32>,T) -> Complex<f32> + Clone + 'static ,params:Vec<T>) -> Vec<Box<dyn IfsFunction>> {
@@ -69,6 +70,22 @@ pub fn iterate_function(mut func:impl FnMut(Complex<f32>) -> (Complex<f32>,f32),
     return ret_list;
 }
 
+pub fn render_ifs(ifs:Ifs, weights:Option<Vec<f32>>, num_iters:u32, colors:Vec<(f32,f32,f32)>, frame:(u32,u32), scale_factor:f32,offset:(f32,f32),gamma:f32,supersample:u32,thread_count:u32){
+	let point_counts: HashMap<(u32,u32), HashMap<u32,u32>> = HashMap::new();
+	let iters_per_thread = num_iters/thread_count;
+	let rng = rand::thread_rng();
+	let func = ifs.build_function(weights, rng);
+	thread::spawn(move|| {
+		let current_value = Complex::<f32>::new(0.0,0.0);
+		for _ in (0..iters_per_thread){
+			let rng = rand::thread_rng();
+			let func = ifs.build_function(weights, rng);
+			let current_value = func(current_value);
+
+		}
+	});
+
+}
 
 pub fn points_to_image(points:Vec<(Complex<f32>,f32)>, palette: impl Fn(f32)->Vec3,resolution:u32,scale_factor:f32, offset:Complex<f32>, gamma:f32)->RgbImage{
 	
