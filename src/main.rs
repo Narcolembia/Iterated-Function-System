@@ -1,5 +1,6 @@
 
 #![allow(unused, non_snake_case)]
+#![allow(non_upper_case_globals)]
 
 
 mod util;
@@ -8,7 +9,7 @@ use std::{collections::HashMap, f32::consts::PI, vec};
 use ifs::{scalar_function_to_ifs, vector_function_to_ifs, Compose, Ifs, Vec3};
 use anyhow::Result as AResult;
 use image::{RgbaImage, Rgba};
-use util::{gen_dilations, gen_points_on_circle, gen_sinxy_functions};
+use util::{gen_dilations, gen_points_on_circle, gen_sinxy_functions,i};
 use num::Complex;
 
 
@@ -16,7 +17,7 @@ use num::Complex;
 
 fn main() -> AResult<()> {
     let j = 1;
-    let i = Complex::<f32>::new(0.0,1.0);
+ 
     //for j in (0..101){
     
         let rng = rand::thread_rng();
@@ -36,18 +37,20 @@ fn main() -> AResult<()> {
 
         let contractions_1 = Ifs::new(
             gen_dilations(
-                &gen_points_on_circle(20,1.0,0.0), 0.25));
+                &gen_points_on_circle(4,1.0,0.0), 0.5));
        
-        let weights_1: Vec<f32> = (0..20).map(|x| if x % 3 == 0 {5.0} else {1.0}).collect();
-        let weights = Some(weights_1);
-        //let weights = None;
-        let ifs_final:Ifs = &contractions_1*&contractions_1;
+        
+       
+        let ifs_final:Ifs = tan.compose(&contractions_1);
+        let weights = Some([4.0,1.0,4.0,1.0].to_vec());
 
 
-        let mut func = ifs_final.build_function(weights,rng);
+    
         //dbg!(util::iterate_function(func, 10u32.pow(1)));
-        let palette = util::generate_color_pallete(Vec3::new(0.7,0.9,0.9), Vec3::new(0.9,0.9,0.9), Vec3::new(0.0,0.27,0.1), Vec3::new(0.1,0.4,0.5));
-        let img = util::points_to_image(util::iterate_function(func, 10u32.pow(7)), palette,2000,0.6,Complex::<f32>::new(0.0,0.0),6.0,);
+        let palette = util::generate_color_pallete(Vec3::new(0.5,0.5,0.5), Vec3::new(0.5,0.5,0.5), Vec3::new(0.25,0.25,0.25), Vec3::new(0.0,0.33,0.67));
+        let colors = (0..ifs_final.len).map(|x|palette((x as f32/ifs_final.len as f32))).collect();
+       
+        let img = util::render_ifs(ifs_final,weights,10u32.pow(7),colors,(2000,2000),1.0,(0.0,0.0),6.0,1,10);
 
     
         img.save(format!("out_{}.png",j))?;

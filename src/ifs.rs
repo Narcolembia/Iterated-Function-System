@@ -20,11 +20,11 @@ pub fn ree() {
 }
 
 
-pub trait IfsFunction: (Fn(Complex<f32>) -> Complex<f32>) + DynClone { 
+pub trait IfsFunction: (Fn(Complex<f32>) -> Complex<f32>) + DynClone + Send { 
     
 }
 
-impl<Func: Clone + Fn(Complex<f32>) -> Complex<f32> + ?Sized> IfsFunction for Func {
+impl<Func: Clone + Fn(Complex<f32>) -> Complex<f32> + ?Sized + Send> IfsFunction for Func {
 
 }
 clone_trait_object!(IfsFunction);
@@ -64,7 +64,7 @@ fn compose(lhs: Box<dyn IfsFunction>,rhs: Box<dyn IfsFunction>) ->Box<dyn IfsFun
 #[derive(Clone)]
 pub struct Ifs {
     functions: Vec<Box<dyn IfsFunction>>,
-    len: usize,
+    pub len: usize,
 }
 
 pub trait Compose<T,O>{
@@ -80,7 +80,7 @@ impl Ifs {
         Self { functions, len }
     }
 
-    pub fn build_function(&self,weights:Option<Vec<f32>>, mut rng: impl Rng) -> impl FnMut(Complex<f32>) -> (Complex<f32>,f32) {
+    pub fn build_function(&self,weights:Option<Vec<f32>>, mut rng: impl Rng) -> impl FnMut(Complex<f32>) -> (Complex<f32>,usize) {
         let functions: Vec<_> = self
             .functions.clone();
         let weights = match weights{
@@ -94,7 +94,7 @@ impl Ifs {
 
         return move |x| {
             let index = dist.sample(&mut rng);
-            return (functions[index](x),(index as f32)/((functions.len() - 1 )as f32));
+            return (functions[index](x),index);
         }
     }
 
@@ -109,14 +109,14 @@ impl Ifs {
 
 
 }
-pub fn scalar_function_to_ifs(func: impl Fn(f32)->f32 + Clone + 'static)->Ifs{
+pub fn scalar_function_to_ifs(func: impl Fn(f32)->f32 + Clone + Send + 'static)->Ifs{
     let func = func.clone();
     let func = move|v:Complex<f32>| Complex::<f32>::new(func(v.re),func(v.im));    
     let func:Box<dyn IfsFunction> = Box::new(func);
     let func = [func].to_vec();
     return Ifs::new(func);
 }
-pub fn vector_function_to_ifs(func: impl Fn(Complex<f32>)->Complex<f32> + Clone + 'static)->Ifs{
+pub fn vector_function_to_ifs(func: impl Fn(Complex<f32>)->Complex<f32> + Clone + Send + 'static)->Ifs{
     let func = func.clone();
     let func = move|v:Complex<f32>| func(v);    
     let func:Box<dyn IfsFunction> = Box::new(func);
