@@ -6,6 +6,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("image", type=str)
 parser.add_argument("-s", "--step", type=int, default=10)
 parser.add_argument("-b", "--blur", type=int, default=50)
+parser.add_argument("-t", "--thickness", type=int, default=1)
 args = parser.parse_args()
 
 # Make blur odd
@@ -22,7 +23,7 @@ image = cv2.imread(args.image)
 image = cv2.GaussianBlur(image, (args.blur, args.blur), 0)
 
 # Create a blank image with the same shape
-contour_image = np.zeros_like(image)
+contour_image = np.ones_like(image)*255
 
 for i in range(0, 255, args.step):
     # Convert image to grayscale
@@ -35,6 +36,6 @@ for i in range(0, 255, args.step):
     contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     # Draw contour lines
-    cv2.drawContours(contour_image, contours, -1, (50, 50,125), 2)
+    cv2.drawContours(contour_image, contours, -1, (0, 0, 0), args.thickness)
 
-cv2.imwrite(f"{image_name}-pp.jpg", contour_image)
+cv2.imwrite(f"{image_name}_pp.png", contour_image)

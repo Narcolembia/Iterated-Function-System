@@ -1,5 +1,5 @@
 use std::{collections::HashMap, f32::consts::PI, mem::offset_of, thread::current,thread,sync::mpsc};
-use image::{imageops::{self, FilterType::{CatmullRom, Gaussian, Triangle}}, Frame, Pixel, Rgba, RgbaImage};
+use image::{imageops::{self, FilterType::{CatmullRom, Gaussian, Triangle}}, Frame, Pixel, Rgba, RgbaImage,GrayAlphaImage,LumaA};
 use nalgebra::{partial_le, partial_max};
 use crate::ifs::*;
 use num::Complex;
@@ -72,12 +72,19 @@ pub fn iterate_function(mut func:impl FnMut(Complex<f32>) -> (Complex<f32>,f32),
     return ret_list;
 }
 
-pub fn render_ifs(ifs:Ifs, weights:Option<Vec<f32>>, num_iters:u32, colors:Vec<Vec3>, frame:(u32,u32), scale_factor:f32,offset:(f32,f32),gamma:f32,supersample:u32,thread_count:u32) ->RgbaImage {
+pub fn render_ifs(ifs:&Ifs, weights:Option<Vec<f32>>, colors:&Vec<Vec3>, background_color:Option<&Vec<u8>>, num_iters:u32, frame:(u32,u32), scale_factor:f32,offset:(f32,f32),rotation:f32,gamma:f32,supersample:u32,thread_count:u32) ->RgbaImage {
 	let rendering_resolution = (frame.0*supersample,frame.1*supersample);
-	let resolution_min = rendering_resolution.0.min(rendering_resolution.1) as f32/2.0;
-	let offset = (1.0 + 1.0*i + offset.0 + offset.1*i);
+	
+	let resolution_min = rendering_resolution.0.min(rendering_resolution.1) as f32;
+	
+	let offset = (rendering_resolution.0 as f32/resolution_min + (rendering_resolution.1 as f32/resolution_min)*i + offset.0 + offset.1*i);
+	let rotation = Complex::<f32>::cis(rotation);
 	let iters_per_thread = num_iters/thread_count;
 	let (tx,rx) = mpsc::channel();
+	let background_color = match background_color{
+		Some(x) => x,
+		None => &[0,0,0,0].to_vec(),
+	};
 
 	for _ in 0..thread_count{
 		let tx_clone = tx.clone();
@@ -88,16 +95,17 @@ pub fn render_ifs(ifs:Ifs, weights:Option<Vec<f32>>, num_iters:u32, colors:Vec<V
 			let mut point_counts: HashMap<(u32,u32), (HashMap<usize,u32>,u32)> = HashMap::new();
 			let rng = rand::thread_rng();
 			let mut func = ifs_clone.build_function(weights_clone, rng);
-			let mut current_value = Complex::<f32>::new(0.0,0.0);
+			let mut current_value = Complex::<f32>::new(rand::random(),rand::random());
 			let mut current_index = 0;
 			for _ in 0..iters_per_thread{
 				(current_value,current_index) = func(current_value);
 				if current_value.norm().is_nan(){
-					current_value = Complex::<f32>::new(1.0,1.0);
-					current_index = 0;
-					
+					current_value = Complex::<f32>::new(rand::random(),rand::random());
+					current_index = 0;	
 				}
-				let pixel = (current_value*scale_factor + offset) * resolution_min;
+				
+				let pixel = (current_value*scale_factor*rotation + offset) * resolution_min/2.0;
+				
 				let pixel = (pixel.re as u32,pixel.im as u32);
 				point_counts.entry(pixel).and_modify(|counts| {
 					counts.0.entry(current_index).and_modify(|count| *count += 1).or_insert(1);
@@ -123,14 +131,14 @@ pub fn render_ifs(ifs:Ifs, weights:Option<Vec<f32>>, num_iters:u32, colors:Vec<V
 					img.put_pixel(x, y,rgbacolor);
 				}
 			}
-			tx_clone.send(imageops::resize(&img,frame.0,frame.1, CatmullRom));
+			tx_clone.send(imageops::resize(&img,frame.0,frame.1, Triangle));
 			println!("thread finished generating image");
 			drop(tx_clone);
 		});
 	}
 	drop(tx);
 	let mut final_image = RgbaImage::new(frame.0, frame.1);
-	final_image.pixels_mut().for_each(|p| *p = Rgba([255, 255, 255, 255]));
+	final_image.pixels_mut().for_each(|p| *p = Rgba([background_color[0]as u8, background_color[1]as u8, background_color[2] as u8, background_color[3]]));
 	
 	for img in rx{
 		imageops::overlay(&mut final_image, &img, 0, 0);
@@ -139,47 +147,76 @@ pub fn render_ifs(ifs:Ifs, weights:Option<Vec<f32>>, num_iters:u32, colors:Vec<V
 	return final_image
 
 }
-/*
-pub fn points_to_image(points:Vec<(Complex<f32>,f32)>, palette: impl Fn(f32)->Vec3,resolution:u32,scale_factor:f32, offset:Complex<f32>, gamma:f32)->RgbImage{
+pub fn render_ifs_greyscale(ifs:&Ifs, weights:Option<Vec<f32>>, transparent_background:bool, num_iters:u32, frame:(u32,u32), scale_factor:f32,offset:(f32,f32),rotation:f32,gamma:f32,supersample:u32,thread_count:u32) ->GrayAlphaImage {
+	let rendering_resolution = (frame.0*supersample,frame.1*supersample);
 	
+	let resolution_min = rendering_resolution.0.min(rendering_resolution.1) as f32;
+	
+	let offset = (rendering_resolution.0 as f32/resolution_min + (rendering_resolution.1 as f32/resolution_min)*i + offset.0 + offset.1*i);
+	let rotation = Complex::<f32>::cis(rotation);
+	let iters_per_thread = num_iters/thread_count;
+	let (tx,rx) = mpsc::channel();
 
-    let pixels: Vec<_> = points
-		.into_iter()
-		.map(|pt| ( (((pt.0*scale_factor) + Complex::<f32>::new(1.0,1.0) + offset)*(resolution - 1) as f32/2.0), pt.1))
-		.map(|(pos, color)| {
-			let pos = (pos.re as u32, pos.im as u32);
-			(pos, palette(color))
-		})
-		.collect();
-    
-	let mut pointCounts: HashMap<(u32, u32), (u32, Vec3)> = HashMap::new();
-    for &(pos, color) in &pixels {
-		pointCounts
-			.entry(pos)
-			.and_modify(|(count, avgColor)| {
-				*count += 1;
-				*avgColor = (*avgColor*0.9 + color*0.1);
-            
-			})
-			.or_insert((1, color));
+	for _ in 0..thread_count{
+		let tx_clone = tx.clone();
+		let ifs_clone = ifs.clone();
+		let weights_clone = weights.clone();
+		let num_points = rendering_resolution.0*rendering_resolution.1;
+		thread::spawn(move|| {
+			let mut point_counts: nalgebra::DMatrix<f32> = nalgebra::DMatrix::from_vec(rendering_resolution.0 as usize,rendering_resolution.1 as usize,(0..num_points).map(|x| 0.0).collect());
+			let rng = rand::thread_rng();
+			let mut func = ifs_clone.build_function(weights_clone, rng);
+			let mut current_value = Complex::<f32>::new(rand::random(),rand::random());
+			for _ in 0..iters_per_thread{
+				(current_value,_) = func(current_value);
+				if current_value.norm().is_nan(){
+					current_value = Complex::<f32>::new(rand::random(),rand::random());
+
+				}
+				
+				let pixel = (current_value*scale_factor*rotation + offset) * resolution_min/2.0;
+				let pixel = (pixel.re as u32,pixel.im as u32);
+				if pixel.0 < rendering_resolution.0 && pixel.1 < rendering_resolution.1{
+					point_counts[(pixel.0 as usize,pixel.1 as usize)] += 1.0;
+				}
+			}
+			println!("thread finished generating points");
+			println!("{}",point_counts.max());
+			let max = point_counts.max();
+			point_counts = point_counts/max;
+
+			let mut img = GrayAlphaImage::new(rendering_resolution.0, rendering_resolution.1);
+
+			img.pixels_mut().for_each(|p| *p = LumaA([255, 0]));
+
+			for x in 0..rendering_resolution.0{
+				for y in 0..rendering_resolution.1{
+					//println!("{}",point_counts[(x as usize,y as usize)] *255.0);
+					let alpha = ((point_counts[(x as usize,y as usize)]).powf(1.0/gamma)*255.0) as u8;
+					img.put_pixel(x, y,LumaA([0,alpha]));
+				}
+			}
+			tx_clone.send(imageops::resize(&img,frame.0,frame.1, Triangle));
+			println!("thread finished generating image");
+			drop(tx_clone);
+		});
 	}
-	let maxCount = pointCounts
-		.values()
-		.map(|&(count, _)| count)
-		.max()
-		.unwrap();
+	drop(tx);
+	let mut final_image = GrayAlphaImage::new(frame.0, frame.1);
+	if transparent_background{ 
+		final_image.pixels_mut().for_each(|p| *p = LumaA([0,0]));
+	}
+	else {
+		final_image.pixels_mut().for_each(|p| *p = LumaA([255,255]));
+	}
+	
+	for img in rx{
+		imageops::overlay(&mut final_image, &img, 0, 0);
+	}
 
-    let mut img = RgbImage::new(resolution, resolution);
-	img.pixels_mut().for_each(|p| *p = Rgb([0, 0, 0]));
-    for ((x, y), (count, color)) in pointCounts {
-		let rgbcolor = color * 255.0 * (count as f32 / maxCount as f32).powf(1.0/gamma);
-		if x<resolution && y < resolution{
-        	img.put_pixel(x, y, Rgb([rgbcolor.x as u8,rgbcolor.y as u8,rgbcolor.z as u8]));
-		}
-    }
-	return img;
+	return final_image
+
 }
-*/
 pub fn generate_color_pallete(a:Vec3, b:Vec3, c:Vec3, d:Vec3) -> impl Fn(f32) -> Vec3{
     return move |x| a + b.component_mul(&(2.0 * PI * (c*x + d)).map(f32::cos)) 
 }
