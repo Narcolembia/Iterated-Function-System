@@ -116,6 +116,7 @@ pub fn scalar_function_to_ifs(func: impl Fn(f32)->f32 + Clone + Send + 'static)-
     let func = [func].to_vec();
     return Ifs::new(func);
 }
+
 pub fn vector_function_to_ifs(func: impl Fn(Complex<f32>)->Complex<f32> + Clone + Send + 'static)->Ifs{
     let func = func.clone();
     let func = move|v:Complex<f32>| func(v);    

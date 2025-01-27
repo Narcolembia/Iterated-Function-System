@@ -10,7 +10,7 @@ use ifs::{scalar_function_to_ifs, vector_function_to_ifs, Compose, Ifs, Vec3};
 use anyhow::Result as AResult;
 use image::{buffer::ConvertBuffer, imageops, RgbImage, Rgba, RgbaImage,GrayAlphaImage};
 use nalgebra::ComplexField;
-use util::{gen_dilations, gen_points_on_circle, gen_sinxy_functions,i};
+use util::{gen_dilations, gen_points_on_circle,i};
 use num::Complex;
 
 
@@ -38,35 +38,28 @@ fn main() -> AResult<()> {
         let real = vector_function_to_ifs(|x| (x.re + 0.0*i));
 
         let num_iters = 10u32.pow(9);
-        let resolution = ((1920*2) as u32,1080*2);
+        let resolution = (4000,4000);
         //let resolution = (resolution.1,resolution.0);
-        let scale = 5.0;
-        let offset = (-1.2,0.0);
+        let scale = 0.43;
+        let offset = (0.0,0.0);
         let rotation = 0.0;
         let gamma_correction = 4.0;
-        let supersample = 1;
+        let supersample = 2;
         let num_threads = 10;
-        let transparent_background = true;
+        let transparent_background = false;
 
-
-
-
+        let points_1 = gen_points_on_circle(4, 1.0, 0.0);
         let contractions_1 = Ifs::new(
         gen_dilations(
-                &gen_points_on_circle(4,1.0,0.0), 0.9));
+                &points_1, 0.5));
  
-        
-         let contractions_2 = Ifs::new(
-        gen_dilations(
-                &gen_points_on_circle(20,1.0,0.0), 0.5));
- 
-        
-        
+   
+
         let contractions = contractions_1;
-        let ifs_1 = (tan.compose(&contractions*&contractions) + sin.compose(&contractions))*0.8 + &contractions*real.compose(ln)*0.08;
+        let ifs_1 = tan.compose(&contractions);
      
         let ifs_final = ifs_1;
-        let weights_1:Option<Vec<f32>> = Some((0..ifs_final.len).map(|x|if x % 2 == 0 {8.0} else {1.0}).collect());
+        let weights_1:Option<Vec<f32>> = Some([6.0,1.0,6.0,1.0].to_vec());
         
         //let weights_1 = None;
         

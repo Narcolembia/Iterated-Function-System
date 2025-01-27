@@ -24,14 +24,6 @@ pub fn dilate_around_point(input:Complex<f32>, params:(Complex<f32>,f32)) -> Com
 	return input * ratio + (1.0-ratio)*target
 }
 
-pub fn sinxy(input:Complex<f32>,params:f32)->Complex<f32>{
-	let freq = params;
-	return Complex::<f32>::new(1.0,1.0)*(input.re*input.im*freq).sin()
-}
-
-pub fn gen_sinxy_functions(freqs:Vec<f32>) ->Vec<Box<dyn IfsFunction>> {
-	return gen_functions(sinxy,freqs);
-}
 
 pub fn gen_dilations( points: &Vec<Complex<f32>>, ratio: f32) -> Vec<Box<dyn IfsFunction>> {
 	let points = points.clone();
