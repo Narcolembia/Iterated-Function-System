@@ -1,3 +1,5 @@
+
+use crate::complexFunction::ComplexFunction;
 use std::{collections::HashMap, f32::consts::PI, mem::offset_of, thread::current,thread,sync::mpsc};
 use image::{imageops::{self, FilterType::{CatmullRom, Gaussian, Triangle}}, Frame, Pixel, Rgba, RgbaImage,GrayAlphaImage,LumaA};
 use nalgebra::{partial_le, partial_max};
@@ -8,28 +10,14 @@ pub const i:Complex<f32> = Complex::I;
 
 
 
-pub fn gen_functions<T:Clone+ Copy + Send +'static>(func: impl Fn(Complex<f32>,T) -> Complex<f32> + Clone+ Send + 'static ,params:Vec<T>) -> Vec<Box<dyn IfsFunction>> {
-	params.into_iter().map(move|param| {
-		let func_clone = func.clone();
-		let ifs_function:Box<dyn IfsFunction>  = Box::new(move |x|{ func_clone(x,param) } );
-			return ifs_function
-	}
-).collect()	
-}
 
-pub fn dilate_around_point(input:Complex<f32>, params:(Complex<f32>,f32)) -> Complex<f32>{
-	let target = params.0;
-	let ratio = params.1;
 
-	return input * ratio + (1.0-ratio)*target
+pub fn dilate_around_point(input:Complex<f32>, point:Complex<f32>, ratio:f32) -> Complex<f32>{
+	return input * ratio + (1.0-ratio)*point
 }
 
 
-pub fn gen_dilations( points: &Vec<Complex<f32>>, ratio: f32) -> Vec<Box<dyn IfsFunction>> {
-	let points = points.clone();
-	let params = points.into_iter().map(|x| (x,ratio)).collect();
-    return gen_functions(dilate_around_point, params)
-}
+
 
 pub fn gen_points_on_circle(num_points:usize, radius:f32,offset:f32) -> Vec<Complex<f32>>{
 	return (0..num_points)
@@ -55,7 +43,7 @@ pub fn iterate_function(mut func:impl FnMut(Complex<f32>) -> (Complex<f32>,f32),
     for _ in (0..num_iters){
         current_value = func(current_value.0);
 		if current_value.0.norm().is_nan(){
-			current_value = (Complex::<f32>::new(1.0,1.0),0.0);
+			current_value = (Complex::<f32>::new(0.0,0.0),0.0);
 			
 		}
         ret_list.push((current_value));
@@ -129,6 +117,7 @@ pub fn render_ifs(ifs:&Ifs, weights:Option<Vec<f32>>, colors:&Vec<Vec3>, backgro
 		});
 	}
 	drop(tx);
+	
 	let mut final_image = RgbaImage::new(frame.0, frame.1);
 	final_image.pixels_mut().for_each(|p| *p = Rgba([background_color[0]as u8, background_color[1]as u8, background_color[2] as u8, background_color[3]]));
 	

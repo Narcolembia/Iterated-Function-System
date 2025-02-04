@@ -11,8 +11,10 @@ opt-level = 3
 
 [dependencies]
 anyhow = "1.0.86"
+auto_ops = "0.3.0"
 dyn-clone = "1.0.17"
 image = "0.25.2"
+lazy_static = "1.5.0"
 nalgebra = "0.33.0"
 num = "0.4.3"
 rand = "0.8.5"
